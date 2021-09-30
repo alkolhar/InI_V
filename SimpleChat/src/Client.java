@@ -164,8 +164,6 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 		} // try
 	} // unregister
 
-	// ----- implementation of ActionListener interface -----
-
 	public void actionPerformed(ActionEvent e) {
 		String cmd = e.getActionCommand();
 		if ("Send".equals(cmd)) {
@@ -242,12 +240,8 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 		} // if
 	} // sendMessage
 
-	// ----- main -----
-
 	public static void main(String argv[]) {
 		new Client();
 	} // main
 
-} // SimpleChatClient
-
-/* ----- End of File ----- */
+}
