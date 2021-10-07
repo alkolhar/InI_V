@@ -27,7 +27,7 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 public class Client extends JFrame implements ActionListener, WindowListener, KeyListener, MqttCallback {
 	private static final long serialVersionUID = -909861873808064255L;
 	private static final String CRLF = "\r\n";
-	private static String CLIENTID = "Jim Panse";
+	private static String CLIENTID = "E898724GRIAF";
 	private static String BROKER = "tcp://146.136.36.40:1883";
 	private static String TOPIC = "ntb/inf/chat";
 	private static int QoS = 2;
@@ -202,7 +202,7 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 	public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
 		String msg = new String(arg1.getPayload());
 		messagesText.setEditable(true);
-		messagesText.append(msg + CRLF);
+		messagesText.setText(msg + CRLF + messagesText.getText());
 		messagesText.setEditable(false);
 	}
 
