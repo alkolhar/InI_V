@@ -18,7 +18,8 @@ public class Consumer implements MqttCallback {
 
 	// private static String broker = "tcp://broker.mqttdashboard.com:1883";
 	// private static String broker = "tcp://test.mosquitto.org:1883";
-	private static String broker = "tcp://localhost:1883";
+	private static String broker = "tcp://146.136.36.40:1883";
+	//private static String broker = "tcp://localhost:1883";
 	private static String clientID = "NTB-Consumer";
 	private static String topic = "home/livingroom/temp";
 	private static int QoS = 2;
