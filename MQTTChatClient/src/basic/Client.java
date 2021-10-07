@@ -1,10 +1,3 @@
-/* -------------------------
-     SimpleChatClient.java
-   ------------------------- */
-
-/*  Simple chat client with communication based on WebSockets (tyrus)  */
-
-/*  Computerkommunikation & Verteilte Systeme 2016, Rene Pawlitzek, NTB  */
 package basic;
 
 import java.awt.BorderLayout;
@@ -25,16 +18,20 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
+import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
-public class Client extends JFrame implements ActionListener, WindowListener, KeyListener {
+public class Client extends JFrame implements ActionListener, WindowListener, KeyListener, MqttCallback {
 	private static final long serialVersionUID = -909861873808064255L;
 	private static String broker = "tcp://146.136.36.40:1883";
-	private static String clientID = "OST-Chatter";
-	private static String topic = "ost/SimpleChat/MQTT";
+	private static String clientID = "Jim Panse";
+	private static String topic = "ntb/inf/chat";
 	private static int QoS = 2;
-	
+	private static final String CRLF = "\r\n";
+
 	private JLabel nameLabel = new JLabel(" Name: ");
 	private JButton sendButton = new JButton("Send");
 	private JButton registerButton = new JButton("Register");
@@ -205,17 +202,35 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 	public void keyTyped(KeyEvent e) {
 	} // keyTyped
 
-
 	private void sendMessage(String message) throws Exception {
 		client.publish(topic, // topic
 				message.getBytes("UTF-8"), // message
 				QoS, // QoS level
-				true); // retained message
+				false); // retained message
 		System.out.println("Nachricht gesendet: " + message);
 	} // sendMessage
 
 	public static void main(String args[]) {
 		new Client();
 	} // main
+
+	@Override
+	public void connectionLost(Throwable arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void deliveryComplete(IMqttDeliveryToken arg0) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
+		String msg = new String(arg1.getPayload());
+		messagesText.append(msg);
+		messagesText.append(CRLF);
+	}
 
 }
