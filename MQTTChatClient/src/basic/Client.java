@@ -26,11 +26,11 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
 public class Client extends JFrame implements ActionListener, WindowListener, KeyListener, MqttCallback {
 	private static final long serialVersionUID = -909861873808064255L;
-	private static String broker = "tcp://146.136.36.40:1883";
-	private static String clientID = "Jim Panse";
-	private static String topic = "ntb/inf/chat";
-	private static int QoS = 2;
 	private static final String CRLF = "\r\n";
+	private static String CLIENTID = "Jim Panse";
+	private static String BROKER = "tcp://146.136.36.40:1883";
+	private static String TOPIC = "ntb/inf/chat";
+	private static int QoS = 2;
 
 	private JLabel nameLabel = new JLabel(" Name: ");
 	private JButton sendButton = new JButton("Send");
@@ -45,9 +45,6 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 
 	public Client() {
 		super("MQTT SimpleChatClient");
-
-		// setup communication
-		setup();
 
 		// setup buttons
 		registerButton.setActionCommand("Register");
@@ -102,26 +99,14 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 
 		// show window
 		setVisible(true);
-
-	} // SimpleChatClient
-
-	private void setup() {
-		// setup the chat client
-		try {
-			System.out.println("Setup Chat Client");
-		} catch (Exception e) {
-			System.out.println("Unable to setup chat client: " + e.toString());
-		} // try
-	} // setup
+	}
 
 	private void quit() {
-		// quit the application
 		System.out.println("Quit Chat Client");
 		System.exit(0);
-	} // quit
+	}
 
 	private void send() {
-		// send the user message
 		try {
 			String user = nameField.getText();
 			String text = messageField.getText();
@@ -130,29 +115,32 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 			messageField.setText("");
 		} catch (Exception e) {
 			System.out.println("Unable to send message: " + e.toString());
-		} // try
-	} // send
+		}
+	}
 
 	private void register() {
-		// register
 		try {
-			client = new MqttClient(broker, clientID, new MemoryPersistence());
+			client = new MqttClient(BROKER, CLIENTID, new MemoryPersistence());
 			client.connect();
+			client.setCallback(this);
+			client.subscribe(TOPIC, QoS);
 
 			System.out.println("Client is registered");
 		} catch (Exception e) {
 			System.out.println("Unable to register: " + e.toString());
-		} // try
-	} // register
+		}
+	}
 
 	private void unregister() {
-		// unregister
 		try {
+			client.setCallback(null);
+			client.unsubscribe(TOPIC);
+			client.disconnect();
 			System.out.println("Client is unregistered");
 		} catch (Exception e) {
 			System.out.println("Unable to unregister: " + e.toString());
-		} // try
-	} // unregister
+		}
+	}
 
 	public void actionPerformed(ActionEvent e) {
 		String cmd = e.getActionCommand();
@@ -162,75 +150,72 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 			register();
 		} else if ("Unregister".equals(cmd)) {
 			unregister();
-		} // if
-	} // actionPerformed
+		}
+	}
 
 	// ----- implementation of WindowListener interface -----
-
 	public void windowActivated(WindowEvent arg0) {
-	} // windowActivated
+	}
 
 	public void windowClosed(WindowEvent arg0) {
-	} // windowClosed
+	}
 
 	public void windowClosing(WindowEvent arg0) {
 		quit();
-	} // windowClosing
+	}
 
 	public void windowDeactivated(WindowEvent arg0) {
-	} // windowDeactived
+	}
 
 	public void windowDeiconified(WindowEvent arg0) {
-	} // windowDeiconified
+	}
 
 	public void windowIconified(WindowEvent arg0) {
-	} // windowIconified
+	}
 
 	public void windowOpened(WindowEvent arg0) {
-	} // windowOpened
+	}
 
 	// ----- implementation of KeyListener interface -----
-
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER)
 			send();
-	} // keyPressed
+	}
 
 	public void keyReleased(KeyEvent e) {
-	} // keyReleased
+	}
 
 	public void keyTyped(KeyEvent e) {
-	} // keyTyped
+	}
 
-	private void sendMessage(String message) throws Exception {
-		client.publish(topic, // topic
-				message.getBytes("UTF-8"), // message
-				QoS, // QoS level
-				false); // retained message
-		System.out.println("Nachricht gesendet: " + message);
-	} // sendMessage
-
-	public static void main(String args[]) {
-		new Client();
-	} // main
-
+	// ----- implementation of MQTT Callback
 	@Override
 	public void connectionLost(Throwable arg0) {
-		// TODO Auto-generated method stub
-
+		System.out.println("Connection lost");
 	}
 
 	@Override
 	public void deliveryComplete(IMqttDeliveryToken arg0) {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
 		String msg = new String(arg1.getPayload());
-		messagesText.append(msg);
-		messagesText.append(CRLF);
+		messagesText.setEditable(true);
+		messagesText.append(msg + CRLF);
+		messagesText.setEditable(false);
+	}
+
+	private void sendMessage(String message) throws Exception {
+		client.publish(TOPIC, // topic
+				message.getBytes("UTF-8"), // message
+				QoS, // QoS level
+				false); // retained message
+		System.out.println("Nachricht gesendet: " + message);
+	}
+
+	public static void main(String args[]) {
+		new Client();
 	}
 
 }
