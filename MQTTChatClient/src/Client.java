@@ -5,8 +5,6 @@
 /*  Simple chat client with communication based on WebSockets (tyrus)  */
 
 /*  Computerkommunikation & Verteilte Systeme 2016, Rene Pawlitzek, NTB  */
-package basic;
-
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -45,6 +43,11 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 	private JScrollPane scrollPane = new JScrollPane(messagesText);
 
 	private MqttClient client;
+	
+
+	public static void main(String args[]) {
+		new Client();
+	} // main
 
 	public Client() {
 		super("MQTT SimpleChatClient");
@@ -213,9 +216,5 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 				true); // retained message
 		System.out.println("Nachricht gesendet: " + message);
 	} // sendMessage
-
-	public static void main(String args[]) {
-		new Client();
-	} // main
 
 }
