@@ -8,7 +8,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.nio.charset.Charset;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -20,21 +19,23 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
+import org.eclipse.californium.core.CoapClient;
+import org.eclipse.californium.core.CoapHandler;
+import org.eclipse.californium.core.CoapObserveRelation;
+import org.eclipse.californium.core.CoapResponse;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
 
-public class Client extends JFrame implements ActionListener, WindowListener, KeyListener, MqttCallback {
-	private static final long serialVersionUID = -909861873808064255L;
+public class COAPClient extends JFrame implements ActionListener, WindowListener, KeyListener, CoapHandler {
+
 	private static final String CRLF = "\r\n";
-	private static String CLIENTID = "E898724GRIAF";
-	//private static String BROKER = "tcp://146.136.36.40:1883";
-	private static String BROKER = "tcp://localhost:1883";
-	private static String TOPIC = "ntb/inf/chat";
-	private static int QoS = 2;
 
+	private static final long serialVersionUID = -2937100503312197315L;
+
+	private boolean firstRun;
+	private CoapClient client;
+	private CoapObserveRelation relation;
+	private String COAPSERVER = "coap://146.136.51.159/chat";
+	
 	private JLabel nameLabel = new JLabel(" Name: ");
 	private JButton sendButton = new JButton("Send");
 	private JButton registerButton = new JButton("Register");
@@ -44,10 +45,8 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 	private JTextField messageField = new JTextField();
 	private JScrollPane scrollPane = new JScrollPane(messagesText);
 
-	private MqttClient client;
-
-	public Client() {
-		super("MQTT SimpleChatClient");
+	public COAPClient() {
+		super("CoAP SimpleChatClient");
 
 		// setup buttons
 		registerButton.setActionCommand("Register");
@@ -102,48 +101,54 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 
 		// show window
 		setVisible(true);
-	}
+
+	} // SimpleChatClient
 
 	private void quit() {
 		System.out.println("Quit Chat Client");
 		System.exit(0);
-	}
+	} // quit
 
 	private void send() {
 		try {
 			String user = nameField.getText();
 			String text = messageField.getText();
+			if (text.isEmpty()) {
+				return;
+			}
 			String msg = user + ": " + text;
-			sendMessage(msg);
+			client.post(msg, MediaTypeRegistry.TEXT_PLAIN);
 			messageField.setText("");
+			System.out.println("Message: '" + text + "' sent!");
 		} catch (Exception e) {
 			System.out.println("Unable to send message: " + e.toString());
-		}
-	}
+		} // try
+	} // send
 
 	private void register() {
 		try {
-			client = new MqttClient(BROKER, CLIENTID, new MemoryPersistence());
-			client.connect();
-			client.setCallback(this);
-			client.subscribe(TOPIC, QoS);
-
+			firstRun = true;
+			client = new CoapClient(COAPSERVER);
+			client.useCONs();
 			System.out.println("Client is registered");
+
+			relation = client.observe(this);
+			System.out.println("Observing CoAP resource");
+
 		} catch (Exception e) {
 			System.out.println("Unable to register: " + e.toString());
-		}
-	}
+		} // try
+	} // register
 
 	private void unregister() {
 		try {
-			client.setCallback(null);
-			client.unsubscribe(TOPIC);
-			client.disconnect();
+			relation.proactiveCancel();
+			client.shutdown();
 			System.out.println("Client is unregistered");
 		} catch (Exception e) {
 			System.out.println("Unable to unregister: " + e.toString());
-		}
-	}
+		} // try
+	} // unregister
 
 	public void actionPerformed(ActionEvent e) {
 		String cmd = e.getActionCommand();
@@ -153,73 +158,68 @@ public class Client extends JFrame implements ActionListener, WindowListener, Ke
 			register();
 		} else if ("Unregister".equals(cmd)) {
 			unregister();
-		}
-	}
+		} // if
+	} // actionPerformed
 
 	// ----- implementation of WindowListener interface -----
+
 	public void windowActivated(WindowEvent arg0) {
-	}
+	} // windowActivated
 
 	public void windowClosed(WindowEvent arg0) {
-	}
+	} // windowClosed
 
 	public void windowClosing(WindowEvent arg0) {
 		quit();
-	}
+	} // windowClosing
 
 	public void windowDeactivated(WindowEvent arg0) {
-	}
+	} // windowDeactived
 
 	public void windowDeiconified(WindowEvent arg0) {
-	}
+	} // windowDeiconified
 
 	public void windowIconified(WindowEvent arg0) {
-	}
+	} // windowIconified
 
 	public void windowOpened(WindowEvent arg0) {
-	}
+	} // windowOpened
 
 	// ----- implementation of KeyListener interface -----
+
 	public void keyPressed(KeyEvent e) {
 		if (e.getKeyCode() == KeyEvent.VK_ENTER)
 			send();
-	}
+	} // keyPressed
 
 	public void keyReleased(KeyEvent e) {
-	}
+	} // keyReleased
 
 	public void keyTyped(KeyEvent e) {
-	}
+	} // keyTyped
 
-	// ----- implementation of MQTT Callback
+	// ----- implementation of CoAP -----
 	@Override
-	public void connectionLost(Throwable arg0) {
-		System.out.println("Connection lost");
-	}
-
-	@Override
-	public void deliveryComplete(IMqttDeliveryToken arg0) {
+	public void onError() {
+		System.out.println("CoAP Error");
 	}
 
 	@Override
-	public void messageArrived(String arg0, MqttMessage arg1) throws Exception {
-		String msg = new String(arg1.getPayload(), Charset.forName("UTF-8"));
-		messagesText.setEditable(true);
-		messagesText.setText(msg + CRLF + messagesText.getText());
-
-		messagesText.setEditable(false);
+	public void onLoad(CoapResponse arg0) {
+		if (client != null) {
+			if (firstRun) {
+				firstRun = false;
+			} else {
+				String msg = arg0.getResponseText();
+				System.out.println("Server: '" + msg + "'");
+				if (msg != null && !msg.isEmpty()) {
+					messagesText.insert(msg + CRLF, 0);
+				}
+			}
+		}
 	}
 
-	private void sendMessage(String message) throws Exception {
-		client.publish(TOPIC, // topic
-				message.getBytes("UTF-8"), // message
-				QoS, // QoS level
-				false); // retained message
-		System.out.println("Nachricht gesendet: " + message);
-	}
-
-	public static void main(String args[]) {
-		new Client();
-	}
-
+	public static void main(String argv[]) {
+		new COAPClient();
+	} // main
 }
